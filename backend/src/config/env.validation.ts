@@ -16,7 +16,8 @@ export const envValidationSchema = Joi.object({
   REDIS_PORT: Joi.number().default(6379),
 
   JWT_SECRET: Joi.string().required(),
-  JWT_ACCESS_TOKEN_TTL: Joi.string().default('24h'),
+  // Seconds. Default 86400 = 24h (see ISSUE-009 — confirm before Phase 11 hardening).
+  JWT_ACCESS_TOKEN_TTL: Joi.number().default(86400),
 
   // Not yet required — wired up in later phases (auth/OTP, image upload, payments).
   AFRICAS_TALKING_USERNAME: Joi.string().allow('').optional(),
