@@ -11,10 +11,11 @@ coverage/
 .vscode/
 .claude/
 
-# env files — never commit real secrets, only *.example templates
+# env files
 .env
 .env.local
 infra/.env
+.env.example
 
 # markdown docs — keep only README.md files tracked (PDF spec stays tracked too)
 *.md
