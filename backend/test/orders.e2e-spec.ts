@@ -245,6 +245,33 @@ describe('Orders (e2e)', () => {
     expect(adminBody.data.some((o) => o.id === order.id)).toBe(true);
   });
 
+  it('GET /orders filters by status (Req 6, admin-web extension)', async () => {
+    const product = await createProduct();
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/orders')
+      .set('Authorization', `Bearer ${customerToken}`)
+      .send({ items: [{ product_id: product.id, quantity: 1 }] })
+      .expect(201);
+    const order = created.body as OrderResponseBody;
+
+    const pendingList = await request(app.getHttpServer())
+      .get('/api/v1/orders')
+      .query({ status: 'PENDING', pageSize: 100 })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const pendingBody = pendingList.body as PaginatedOrdersBody;
+    expect(pendingBody.data.some((o) => o.id === order.id)).toBe(true);
+    expect(pendingBody.data.every((o) => o.status === 'PENDING')).toBe(true);
+
+    const cancelledList = await request(app.getHttpServer())
+      .get('/api/v1/orders')
+      .query({ status: 'CANCELLED', pageSize: 100 })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const cancelledBody = cancelledList.body as PaginatedOrdersBody;
+    expect(cancelledBody.data.some((o) => o.id === order.id)).toBe(false);
+  });
+
   it("returns 404 for another customer's order, 200 for the owner and admin (Req 7)", async () => {
     const product = await createProduct();
     const created = await request(app.getHttpServer())

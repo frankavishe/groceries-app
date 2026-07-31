@@ -31,6 +31,18 @@ export class CategoriesController {
     return categories.map(toPublicCategory);
   }
 
+  // Beyond the spec PDF's endpoint list — the admin management view (Req 3)
+  // needs to see deactivated (is_active=false) categories too, which the
+  // public GET /categories intentionally excludes. See
+  // specs/admin-web/design.md's extension note.
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async findAllForAdmin() {
+    const categories = await this.categoriesService.findAll();
+    return categories.map(toPublicCategory);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

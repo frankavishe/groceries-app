@@ -43,6 +43,28 @@ export class ProductsController {
     return products.map(toPublicProduct);
   }
 
+  // Beyond the spec PDF's endpoint list — the admin management view (Req 4)
+  // needs to see deactivated (is_available=false) products too, which the
+  // public GET /products intentionally excludes. See
+  // specs/admin-web/design.md's extension note.
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findAllForAdmin(@Query() query: QueryProductsDto) {
+    return this.productsService.findAllForAdmin(query);
+  }
+
+  // Also beyond the spec PDF — the admin edit view (Req 4) needs to fetch a
+  // single product (incl. deactivated ones) by id; declared after the
+  // 'admin'/'low-stock' literal routes above so they aren't shadowed by this
+  // `:id` param route.
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return toPublicProduct(await this.productsService.findOneOrFail(id));
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

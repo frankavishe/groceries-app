@@ -16,6 +16,7 @@ interface ProductResponseBody {
   in_stock: boolean;
   image_url: string | null;
   category_id: number | null;
+  is_available: boolean;
 }
 
 interface PaginatedProductsBody {
@@ -215,6 +216,55 @@ describe('Products (e2e)', () => {
     const body = res.body as ProductResponseBody[];
     expect(body.some((p) => p.id === lowStockProduct.id)).toBe(true);
     expect(body.every((p) => p.stock_quantity <= 5)).toBe(true);
+  });
+
+  it('GET /products/admin includes deactivated products, admin only', async () => {
+    const product = await createProduct();
+    await request(app.getHttpServer())
+      .patch(`/api/v1/products/${product.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ is_available: false })
+      .expect(200);
+
+    const forbidden = await request(app.getHttpServer())
+      .get('/api/v1/products/admin')
+      .query({ search: product.name })
+      .set('Authorization', `Bearer ${customerToken}`)
+      .expect(403);
+    expect((forbidden.body as ErrorResponseBody).error).toBe('FORBIDDEN_ROLE');
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/products/admin')
+      .query({ search: product.name })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const body = res.body as PaginatedProductsBody;
+    const match = body.data.find((p) => p.id === product.id);
+    expect(match).toBeDefined();
+    expect(match?.is_available).toBe(false);
+  });
+
+  it('GET /products/:id returns a single product incl. deactivated, admin only', async () => {
+    const product = await createProduct();
+    await request(app.getHttpServer())
+      .patch(`/api/v1/products/${product.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ is_available: false })
+      .expect(200);
+
+    const forbidden = await request(app.getHttpServer())
+      .get(`/api/v1/products/${product.id}`)
+      .set('Authorization', `Bearer ${customerToken}`)
+      .expect(403);
+    expect((forbidden.body as ErrorResponseBody).error).toBe('FORBIDDEN_ROLE');
+
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/products/${product.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const body = res.body as ProductResponseBody;
+    expect(body.id).toBe(product.id);
+    expect(body.is_available).toBe(false);
   });
 
   it('uploads a product image and sets image_url (Req 9)', async () => {
