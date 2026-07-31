@@ -1,6 +1,10 @@
 import * as bcrypt from 'bcrypt';
 import dataSource from './data-source';
 
+interface IdRow {
+  id: number;
+}
+
 const ADMIN = {
   fullName: 'Seed Admin',
   phoneNumber: '+255700000001',
@@ -141,28 +145,28 @@ async function seed() {
     // (see specs/database/design.md), so idempotency is check-before-insert by name.
     const categoryIds = new Map<string, number>();
     for (const category of CATEGORIES) {
-      const existing = await queryRunner.query(
+      const existing = (await queryRunner.query(
         `SELECT id FROM categories WHERE name = $1`,
         [category.name],
-      );
+      )) as IdRow[];
       if (existing.length > 0) {
         categoryIds.set(category.name, existing[0].id);
         continue;
       }
-      const inserted = await queryRunner.query(
+      const inserted = (await queryRunner.query(
         `INSERT INTO categories (name, icon_url) VALUES ($1, $2) RETURNING id`,
         [category.name, category.iconUrl],
-      );
+      )) as IdRow[];
       categoryIds.set(category.name, inserted[0].id);
     }
     console.log(`Seeded ${CATEGORIES.length} categories`);
 
     let productsInserted = 0;
     for (const product of PRODUCTS) {
-      const existing = await queryRunner.query(
+      const existing = (await queryRunner.query(
         `SELECT id FROM products WHERE name = $1`,
         [product.name],
-      );
+      )) as IdRow[];
       if (existing.length > 0) {
         continue;
       }
@@ -180,7 +184,9 @@ async function seed() {
       );
       productsInserted++;
     }
-    console.log(`Seeded ${productsInserted} new products (of ${PRODUCTS.length} defined)`);
+    console.log(
+      `Seeded ${productsInserted} new products (of ${PRODUCTS.length} defined)`,
+    );
   } finally {
     await queryRunner.release();
     await dataSource.destroy();
