@@ -9,6 +9,7 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+.claude/
 
 # env files — never commit real secrets, only *.example templates
 .env
