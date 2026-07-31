@@ -1,0 +1,28 @@
+name: mobile-app-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/mobile-app-ci.yml"
+  pull_request:
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/mobile-app-ci.yml"
+
+defaults:
+  run:
+    working-directory: mobile-app
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test

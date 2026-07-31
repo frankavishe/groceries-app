@@ -1,0 +1,20 @@
+# Root-level ignores for the monorepo. Each app (backend/admin-web/mobile-app)
+# also has its own .gitignore for framework-specific artifacts.
+
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# env files — never commit real secrets, only *.example templates
+.env
+.env.local
+infra/.env
+
+# markdown docs — keep only README.md files tracked (PDF spec stays tracked too)
+*.md
+!README.md
