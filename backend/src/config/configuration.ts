@@ -13,6 +13,10 @@ export default () => ({
   },
   jwt: {
     secret: process.env.JWT_SECRET,
-    accessTokenTtl: process.env.JWT_ACCESS_TOKEN_TTL ?? '24h',
+    accessTokenTtl: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '86400', 10),
+  },
+  africasTalking: {
+    username: process.env.AFRICAS_TALKING_USERNAME || undefined,
+    apiKey: process.env.AFRICAS_TALKING_API_KEY || undefined,
   },
 });

@@ -5,6 +5,8 @@ import { AppService } from './app.service';
 import configuration from './config/configuration';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
+import { RedisModule } from './redis/redis.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { DatabaseModule } from './database/database.module';
       validationSchema: envValidationSchema,
     }),
     DatabaseModule,
+    RedisModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

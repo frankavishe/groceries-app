@@ -48,5 +48,5 @@ DB_NAME=groceries
 REDIS_HOST=localhost
 REDIS_PORT=6379
 JWT_SECRET=change-me-in-every-environment
-JWT_ACCESS_TOKEN_TTL=24h
+JWT_ACCESS_TOKEN_TTL=86400
 ```
