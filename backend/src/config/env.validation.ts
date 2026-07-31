@@ -5,6 +5,9 @@ export const envValidationSchema = Joi.object({
     .valid('development', 'test', 'production')
     .default('development'),
   PORT: Joi.number().default(4000),
+  // Used to build public URLs for the local-disk upload fallback (see
+  // src/uploads). Defaults to http://localhost:{PORT}.
+  PUBLIC_BASE_URL: Joi.string().allow('').optional(),
 
   DB_HOST: Joi.string().required(),
   DB_PORT: Joi.number().default(5432),

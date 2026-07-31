@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { Category } from '../categories/entities/category.entity';
+import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 
 type PostgresDataSourceOptions = Extract<
@@ -14,7 +16,7 @@ export const dataSourceOptions: PostgresDataSourceOptions = {
   username: process.env.DB_USER ?? 'groceries',
   password: process.env.DB_PASSWORD ?? 'groceries',
   database: process.env.DB_NAME ?? 'groceries',
-  entities: [User],
+  entities: [User, Category, Product],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   synchronize: false,
 };
