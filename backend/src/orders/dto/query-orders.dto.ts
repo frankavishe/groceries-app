@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { OrderStatus } from '../entities/order.entity';
 
 export class QueryOrdersDto {
   @IsOptional()
@@ -14,4 +15,10 @@ export class QueryOrdersDto {
   @Min(1)
   @Max(100)
   pageSize?: number = 20;
+
+  // Not in the spec PDF's field list — needed by
+  // specs/admin-web/requirements.md Req 6 (order list filterable by status).
+  @IsOptional()
+  @IsEnum(OrderStatus)
+  status?: OrderStatus;
 }

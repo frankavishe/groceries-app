@@ -10,6 +10,7 @@ export interface PublicProduct {
   in_stock: boolean;
   image_url: string | null;
   category_id: number | null;
+  is_available: boolean;
 }
 
 // Req 4: stock_quantity = 0 still appears in listings, but `in_stock` must
@@ -25,5 +26,6 @@ export function toPublicProduct(product: Product): PublicProduct {
     in_stock: product.stockQuantity > 0,
     image_url: product.imageUrl,
     category_id: product.categoryId,
+    is_available: product.isAvailable,
   };
 }

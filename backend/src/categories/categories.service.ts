@@ -22,6 +22,14 @@ export class CategoriesService {
     });
   }
 
+  // Admin-only counterpart: the public listing filters out is_active=false
+  // categories, but the admin management view (specs/admin-web/requirements.md
+  // Req 3) needs to see and re-activate deactivated categories too — see
+  // specs/admin-web/design.md's extension note.
+  findAll(): Promise<Category[]> {
+    return this.categoriesRepository.find({ order: { name: 'ASC' } });
+  }
+
   async findOneOrFail(id: number): Promise<Category> {
     const category = await this.categoriesRepository.findOne({
       where: { id },

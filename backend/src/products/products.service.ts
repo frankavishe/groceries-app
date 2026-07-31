@@ -57,6 +57,41 @@ export class ProductsService {
     };
   }
 
+  // Admin-only counterpart to findAll: the public listing filters out
+  // is_available=false products (storefront rule), but the admin management
+  // view (specs/admin-web/requirements.md Req 4) needs to see and re-activate
+  // deactivated products too — see specs/admin-web/design.md's extension note.
+  async findAllForAdmin(query: QueryProductsDto): Promise<PaginatedProducts> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+
+    const qb = this.productsRepository.createQueryBuilder('product');
+
+    if (query.search) {
+      qb.andWhere('product.name ILIKE :search', {
+        search: `%${query.search}%`,
+      });
+    }
+    if (query.category_id !== undefined) {
+      qb.andWhere('product.category_id = :categoryId', {
+        categoryId: query.category_id,
+      });
+    }
+
+    qb.orderBy('product.name', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      data: items.map(toPublicProduct),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
   async findOneOrFail(id: string): Promise<Product> {
     const product = await this.productsRepository.findOne({ where: { id } });
     if (!product) {

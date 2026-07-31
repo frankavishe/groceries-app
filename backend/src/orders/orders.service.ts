@@ -149,6 +149,9 @@ export class OrdersService {
     if (user.role !== UserRole.ADMIN) {
       qb.andWhere('order.user_id = :userId', { userId: user.sub });
     }
+    if (query.status) {
+      qb.andWhere('order.status = :status', { status: query.status });
+    }
 
     const [orders, total] = await qb.getManyAndCount();
 

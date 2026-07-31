@@ -130,6 +130,36 @@ describe('Categories (e2e)', () => {
     expect(body.find((c) => c.id === createdBody.id)).toBeUndefined();
   });
 
+  it('GET /categories/admin includes deactivated categories, admin only', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: uniqueName('AdminVisible') })
+      .expect(201);
+    const createdBody = created.body as CategoryResponseBody;
+
+    await request(app.getHttpServer())
+      .patch(`/api/v1/categories/${createdBody.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ is_active: false })
+      .expect(200);
+
+    const forbidden = await request(app.getHttpServer())
+      .get('/api/v1/categories/admin')
+      .set('Authorization', `Bearer ${customerToken}`)
+      .expect(403);
+    expect((forbidden.body as ErrorResponseBody).error).toBe('FORBIDDEN_ROLE');
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/categories/admin')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const body = res.body as CategoryResponseBody[];
+    const match = body.find((c) => c.id === createdBody.id);
+    expect(match).toBeDefined();
+    expect(match?.is_active).toBe(false);
+  });
+
   it('rejects non-admin writes with 403 (Req 5)', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/categories')
