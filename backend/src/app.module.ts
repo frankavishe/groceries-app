@@ -9,6 +9,7 @@ import { DatabaseModule } from './database/database.module';
 import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
+import { DeliveryModule } from './delivery/delivery.module';
 import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -28,6 +29,7 @@ import { UploadsModule } from './uploads/uploads.module';
     CategoriesModule,
     ProductsModule,
     OrdersModule,
+    DeliveryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

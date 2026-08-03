@@ -15,9 +15,11 @@ interface LoginResponseBody {
 }
 
 // Req 1: authenticate against the backend and store the JWT in an httpOnly
-// cookie. Req 2: reject non-ADMIN credentials here at the door, in addition
-// to proxy.ts's route-level check (defense in depth for the case where an
-// already-issued CUSTOMER/DELIVERY_AGENT token is pasted into this cookie).
+// cookie. Req 2: reject CUSTOMER credentials here at the door, in addition to
+// proxy.ts's route-level check (defense in depth for the case where an
+// already-issued CUSTOMER token is pasted into this cookie). DELIVERY_AGENT
+// is allowed through — specs/delivery/tasks.md's decision to have agents
+// reuse this same login, scoped by role, rather than a separate app.
 export async function loginAction(
   _prevState: LoginState,
   formData: FormData,
@@ -52,8 +54,8 @@ export async function loginAction(
   }
 
   const body = data as LoginResponseBody;
-  if (body.user.role !== 'ADMIN') {
-    return { error: 'This account does not have admin access.' };
+  if (body.user.role !== 'ADMIN' && body.user.role !== 'DELIVERY_AGENT') {
+    return { error: 'This account does not have dashboard access.' };
   }
 
   const cookieStore = await cookies();
@@ -65,5 +67,5 @@ export async function loginAction(
     maxAge: 60 * 60 * 24,
   });
 
-  redirect('/categories');
+  redirect(body.user.role === 'ADMIN' ? '/categories' : '/delivery');
 }

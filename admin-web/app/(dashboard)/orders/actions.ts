@@ -36,3 +36,35 @@ export async function updateOrderStatusAction(
   revalidatePath(`/orders/${orderId}`);
   return {};
 }
+
+export interface AssignAgentState {
+  error?: string;
+}
+
+// specs/delivery/requirements.md Req 1-3: admin assigns a delivery agent to
+// an order already being fulfilled; the backend re-validates order status
+// and agent role regardless of what this form offers.
+export async function assignAgentAction(
+  orderId: string,
+  _prevState: AssignAgentState,
+  formData: FormData,
+): Promise<AssignAgentState> {
+  const agentId = String(formData.get('agent_id') ?? '');
+  if (!agentId) {
+    return { error: 'Select a delivery agent.' };
+  }
+
+  try {
+    await apiFetch<Order>(`/orders/${orderId}/assign`, {
+      method: 'PATCH',
+      body: { agent_id: agentId },
+    });
+  } catch (err) {
+    if (err instanceof ApiError) return { error: err.message };
+    throw err;
+  }
+
+  revalidatePath('/orders');
+  revalidatePath(`/orders/${orderId}`);
+  return {};
+}

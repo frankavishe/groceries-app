@@ -11,6 +11,7 @@ export interface PublicOrderItem {
 export interface PublicOrder {
   id: string;
   user_id: string | null;
+  assigned_agent_id: string | null;
   status: OrderStatus;
   total_amount: number;
   delivery_fee: number;
@@ -31,6 +32,7 @@ export function toPublicOrder(order: Order, items: OrderItem[]): PublicOrder {
   return {
     id: order.id,
     user_id: order.userId,
+    assigned_agent_id: order.assignedAgentId,
     status: order.status,
     total_amount: order.totalAmount,
     delivery_fee: order.deliveryFee,

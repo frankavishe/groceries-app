@@ -24,6 +24,9 @@ export class Order {
   @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string | null;
 
+  @Column({ name: 'assigned_agent_id', type: 'uuid', nullable: true })
+  assignedAgentId: string | null;
+
   @Column({
     name: 'total_amount',
     type: 'numeric',
