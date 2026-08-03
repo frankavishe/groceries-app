@@ -1,4 +1,10 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Repository } from 'typeorm';
@@ -34,13 +40,22 @@ const DELIVERY_FEE = 2000;
 
 const RESERVATION_TIMEOUT_MS = 20 * 60 * 1000;
 
+// M6 mobile MVP stub payment (specs/mobile-app/design.md "Stub Payment for
+// Early Development"): simulates the USSD-push round trip so the mobile
+// client's real polling loop (Req 11) has something genuine to observe,
+// without building the real payments engine (M8/M9).
+const STUB_PAYMENT_DELAY_MS = 4000;
+
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemsRepository: Repository<OrderItem>,
+    private readonly configService: ConfigService,
   ) {}
 
   // Req 1-4: single transaction, rows locked in ascending product_id order
@@ -224,6 +239,41 @@ export class OrdersService {
       order.status = OrderStatus.CANCELLED;
       await manager.save(Order, order);
     });
+  }
+
+  // M6 mobile MVP stub payment: NOT part of any spec's payments engine (that's
+  // M8/M9, per specs/payments/design.md) — this only exists so the mobile app
+  // can be built end-to-end against a real PENDING->PAID transition before
+  // the real PaymentProviderAdapter integrations land. Gated by
+  // config.stubPayments.enabled so it 404s once real payments are wired up
+  // and the mobile release build's stub path is removed (see
+  // specs/mobile-app/tasks.md's last item).
+  async initiateStubPayment(
+    id: string,
+    user: JwtPayload,
+  ): Promise<OrderWithItems> {
+    if (!this.configService.get<boolean>('stubPayments.enabled')) {
+      throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    const { order, items } = await this.findOneForUser(id, user);
+    if (order.status !== OrderStatus.PENDING) {
+      throw new ApiException(
+        HttpStatus.BAD_REQUEST,
+        'INVALID_STATUS_TRANSITION',
+        `Cannot initiate payment for an order in status ${order.status}.`,
+      );
+    }
+
+    // Fires after the client starts polling GET /orders/:id, mirroring the
+    // async USSD-push round trip the real engine will have (Req 11-12).
+    setTimeout(() => {
+      this.updateStatus(id, OrderStatus.PAID).catch((err: unknown) => {
+        this.logger.error(`Stub payment failed to settle order ${id}`, err);
+      });
+    }, STUB_PAYMENT_DELAY_MS);
+
+    return { order, items };
   }
 
   // Req 8-9: explicit transition table, not ad hoc if/else.
