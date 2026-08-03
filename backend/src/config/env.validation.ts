@@ -32,10 +32,4 @@ export const envValidationSchema = Joi.object({
   MPESA_API_KEY: Joi.string().allow('').optional(),
   MIXX_YAS_API_KEY: Joi.string().allow('').optional(),
   AIRTEL_MONEY_API_KEY: Joi.string().allow('').optional(),
-
-  // M6 mobile MVP: mocked "always succeeds" payment (see
-  // specs/mobile-app/design.md "Stub Payment for Early Development"). Default
-  // on for dev/staging; set false once the real payments engine (M8/M9)
-  // lands so the mobile release build's stub path 404s instead of firing.
-  STUB_PAYMENTS_ENABLED: Joi.boolean().default(true),
 });

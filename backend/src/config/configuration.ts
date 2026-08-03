@@ -31,7 +31,4 @@ export default () => ({
       process.env.PUBLIC_BASE_URL ||
       `http://localhost:${process.env.PORT ?? '4000'}`,
   },
-  stubPayments: {
-    enabled: (process.env.STUB_PAYMENTS_ENABLED ?? 'true') === 'true',
-  },
 });

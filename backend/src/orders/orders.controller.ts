@@ -2,8 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -52,22 +50,6 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     const { order, items } = await this.ordersService.findOneForUser(
-      id,
-      req.user,
-    );
-    return toPublicOrder(order, items);
-  }
-
-  // M6 mobile MVP stub payment (specs/mobile-app/design.md) — not the real
-  // payments engine (M8/M9). Removed once specs/payments lands for real.
-  @Post(':id/stub-pay')
-  @Roles(UserRole.CUSTOMER)
-  @HttpCode(HttpStatus.ACCEPTED)
-  async stubPay(
-    @Req() req: AuthenticatedRequest,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    const { order, items } = await this.ordersService.initiateStubPayment(
       id,
       req.user,
     );

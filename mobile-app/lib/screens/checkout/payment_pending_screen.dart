@@ -4,21 +4,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_exception.dart';
-import '../../models/order.dart';
+import '../../models/payment_transaction.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/orders_provider.dart';
+import '../../providers/payments_provider.dart';
 import 'order_confirmation_screen.dart';
 
-enum _PendingUiState { waiting, timedOut, cancelled, error }
+enum _PendingUiState { waiting, failed, timedOut, error }
 
-// Req 11-12: polls GET /orders/:id every 3s for up to 2 minutes. On timeout,
-// this is NOT treated as failure — an MNO callback (or, here, the stub's
-// delayed settlement) can still arrive after the client gives up, per
-// specs/mobile-app/design.md "Payments UX".
+// Req 11-12: polls GET /payments/:orderId/status every 3s for up to 2
+// minutes. On timeout, this is NOT treated as failure — the provider's
+// callback can still arrive after the client gives up, per
+// specs/mobile-app/design.md "Payments UX". A FAILED result (Req 8: the
+// order stays PENDING) is distinct from a timeout — it's a definite outcome,
+// not "still waiting".
 class PaymentPendingScreen extends ConsumerStatefulWidget {
   final String orderId;
+  final String provider;
+  final String phoneNumber;
 
-  const PaymentPendingScreen({super.key, required this.orderId});
+  const PaymentPendingScreen({
+    super.key,
+    required this.orderId,
+    required this.provider,
+    required this.phoneNumber,
+  });
 
   @override
   ConsumerState<PaymentPendingScreen> createState() => _PaymentPendingScreenState();
@@ -58,12 +68,16 @@ class _PaymentPendingScreenState extends ConsumerState<PaymentPendingScreen> {
   Future<void> _poll() async {
     _elapsedSeconds += _pollInterval.inSeconds;
     try {
-      final order = await ref.read(ordersRepositoryProvider).getOrder(widget.orderId);
+      final transaction = await ref
+          .read(paymentsRepositoryProvider)
+          .getPaymentStatus(widget.orderId);
       if (!mounted) return;
 
-      if (order.status == OrderStatus.paid) {
+      if (transaction.status == PaymentStatus.successful) {
         _poller?.cancel();
         await ref.read(cartControllerProvider.notifier).clear();
+        if (!mounted) return;
+        final order = await ref.read(ordersRepositoryProvider).getOrder(widget.orderId);
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => OrderConfirmationScreen(order: order)),
@@ -71,9 +85,9 @@ class _PaymentPendingScreenState extends ConsumerState<PaymentPendingScreen> {
         return;
       }
 
-      if (order.status == OrderStatus.cancelled) {
+      if (transaction.status == PaymentStatus.failed) {
         _poller?.cancel();
-        if (mounted) setState(() => _uiState = _PendingUiState.cancelled);
+        if (mounted) setState(() => _uiState = _PendingUiState.failed);
         return;
       }
 
@@ -104,7 +118,11 @@ class _PaymentPendingScreenState extends ConsumerState<PaymentPendingScreen> {
       _error = null;
     });
     try {
-      await ref.read(ordersRepositoryProvider).initiateStubPayment(widget.orderId);
+      await ref.read(paymentsRepositoryProvider).initiatePayment(
+        orderId: widget.orderId,
+        provider: widget.provider,
+        phoneNumber: widget.phoneNumber,
+      );
       _startPolling();
     } on ApiException catch (e) {
       setState(() {
@@ -145,6 +163,19 @@ class _PaymentPendingScreenState extends ConsumerState<PaymentPendingScreen> {
             textAlign: TextAlign.center,
           ),
         ];
+      case _PendingUiState.failed:
+        return [
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const SizedBox(height: 16),
+          const Text(
+            'Payment was not completed. Your order is still reserved — try again.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          FilledButton(onPressed: _retry, child: const Text('Try again')),
+          const SizedBox(height: 8),
+          TextButton(onPressed: _backToShopping, child: const Text('Back to shopping')),
+        ];
       case _PendingUiState.timedOut:
         return [
           const Icon(Icons.hourglass_empty, size: 48),
@@ -158,14 +189,6 @@ class _PaymentPendingScreenState extends ConsumerState<PaymentPendingScreen> {
           FilledButton(onPressed: _retry, child: const Text('Try again')),
           const SizedBox(height: 8),
           TextButton(onPressed: _backToShopping, child: const Text('Back to shopping')),
-        ];
-      case _PendingUiState.cancelled:
-        return [
-          const Icon(Icons.cancel_outlined, size: 48, color: Colors.red),
-          const SizedBox(height: 16),
-          const Text('This order was cancelled and its stock released.', textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          FilledButton(onPressed: _backToShopping, child: const Text('Back to shopping')),
         ];
       case _PendingUiState.error:
         return [

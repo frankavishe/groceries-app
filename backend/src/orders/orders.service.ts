@@ -4,7 +4,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Repository } from 'typeorm';
@@ -42,12 +41,6 @@ const DELIVERY_FEE = 2000;
 
 const RESERVATION_TIMEOUT_MS = 20 * 60 * 1000;
 
-// M6 mobile MVP stub payment (specs/mobile-app/design.md "Stub Payment for
-// Early Development"): simulates the USSD-push round trip so the mobile
-// client's real polling loop (Req 11) has something genuine to observe,
-// without building the real payments engine (M8/M9).
-const STUB_PAYMENT_DELAY_MS = 4000;
-
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -57,7 +50,6 @@ export class OrdersService {
     private readonly ordersRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemsRepository: Repository<OrderItem>,
-    private readonly configService: ConfigService,
     private readonly usersService: UsersService,
   ) {}
 
@@ -244,41 +236,6 @@ export class OrdersService {
     });
   }
 
-  // M6 mobile MVP stub payment: NOT part of any spec's payments engine (that's
-  // M8/M9, per specs/payments/design.md) — this only exists so the mobile app
-  // can be built end-to-end against a real PENDING->PAID transition before
-  // the real PaymentProviderAdapter integrations land. Gated by
-  // config.stubPayments.enabled so it 404s once real payments are wired up
-  // and the mobile release build's stub path is removed (see
-  // specs/mobile-app/tasks.md's last item).
-  async initiateStubPayment(
-    id: string,
-    user: JwtPayload,
-  ): Promise<OrderWithItems> {
-    if (!this.configService.get<boolean>('stubPayments.enabled')) {
-      throw new NotFoundException(`Order ${id} not found`);
-    }
-
-    const { order, items } = await this.findOneForUser(id, user);
-    if (order.status !== OrderStatus.PENDING) {
-      throw new ApiException(
-        HttpStatus.BAD_REQUEST,
-        'INVALID_STATUS_TRANSITION',
-        `Cannot initiate payment for an order in status ${order.status}.`,
-      );
-    }
-
-    // Fires after the client starts polling GET /orders/:id, mirroring the
-    // async USSD-push round trip the real engine will have (Req 11-12).
-    setTimeout(() => {
-      this.updateStatus(id, OrderStatus.PAID).catch((err: unknown) => {
-        this.logger.error(`Stub payment failed to settle order ${id}`, err);
-      });
-    }, STUB_PAYMENT_DELAY_MS);
-
-    return { order, items };
-  }
-
   // specs/delivery/requirements.md Req 1-3: admin assigns a DELIVERY_AGENT to
   // an order that's already being fulfilled.
   async assignAgent(id: string, dto: AssignOrderDto): Promise<OrderWithItems> {
@@ -344,9 +301,10 @@ export class OrdersService {
   }
 
   // Req 8-9: explicit transition table, not ad hoc if/else. `actor` is
-  // undefined for internal system-driven transitions (the stub-payment
-  // settlement below); specs/delivery/design.md's narrower DELIVERY_AGENT
-  // guard only applies when a DELIVERY_AGENT is the one calling in.
+  // undefined for internal system-driven transitions (e.g. the payments
+  // module's callback handler cascading to PAID, per specs/payments/design.md);
+  // specs/delivery/design.md's narrower DELIVERY_AGENT guard only applies
+  // when a DELIVERY_AGENT is the one calling in.
   async updateStatus(
     id: string,
     newStatus: OrderStatus,

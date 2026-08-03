@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
 import { UploadsModule } from './uploads/uploads.module';
 
@@ -30,6 +31,7 @@ import { UploadsModule } from './uploads/uploads.module';
     ProductsModule,
     OrdersModule,
     DeliveryModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
