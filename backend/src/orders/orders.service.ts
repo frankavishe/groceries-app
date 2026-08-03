@@ -12,6 +12,8 @@ import { ApiException } from '../common/exceptions/api-exception';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Product } from '../products/entities/product.entity';
 import { UserRole } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { AssignOrderDto } from './dto/assign-order.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
 import { OrderItem } from './entities/order-item.entity';
@@ -56,6 +58,7 @@ export class OrdersService {
     @InjectRepository(OrderItem)
     private readonly orderItemsRepository: Repository<OrderItem>,
     private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
   ) {}
 
   // Req 1-4: single transaction, rows locked in ascending product_id order
@@ -276,14 +279,96 @@ export class OrdersService {
     return { order, items };
   }
 
-  // Req 8-9: explicit transition table, not ad hoc if/else.
+  // specs/delivery/requirements.md Req 1-3: admin assigns a DELIVERY_AGENT to
+  // an order that's already being fulfilled.
+  async assignAgent(id: string, dto: AssignOrderDto): Promise<OrderWithItems> {
+    const order = await this.ordersRepository.findOne({ where: { id } });
+    if (!order) {
+      throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    if (
+      order.status !== OrderStatus.PROCESSING &&
+      order.status !== OrderStatus.DISPATCHED
+    ) {
+      throw new ApiException(
+        HttpStatus.BAD_REQUEST,
+        'INVALID_ORDER_STATUS_FOR_ASSIGNMENT',
+        `Cannot assign a delivery agent to an order in status ${order.status}.`,
+      );
+    }
+
+    const agent = await this.usersService.findById(dto.agent_id);
+    if (!agent || agent.role !== UserRole.DELIVERY_AGENT) {
+      throw new ApiException(
+        HttpStatus.BAD_REQUEST,
+        'INVALID_DELIVERY_AGENT',
+        'The supplied user is not a delivery agent.',
+      );
+    }
+
+    order.assignedAgentId = agent.id;
+    await this.ordersRepository.save(order);
+
+    return this.findOrderWithItemsOrFail(id);
+  }
+
+  // specs/delivery/requirements.md Req 4: an agent's own assigned orders,
+  // DISPATCHED (their active queue) shown first.
+  async findAssignedOrders(agentId: string): Promise<PublicOrder[]> {
+    const orders = await this.ordersRepository
+      .createQueryBuilder('order')
+      .where('order.assigned_agent_id = :agentId', { agentId })
+      .orderBy(
+        `CASE WHEN order.status = '${OrderStatus.DISPATCHED}' THEN 0 ELSE 1 END`,
+        'ASC',
+      )
+      .addOrderBy('order.created_at', 'DESC')
+      .getMany();
+
+    const orderIds = orders.map((o) => o.id);
+    const items =
+      orderIds.length > 0
+        ? await this.orderItemsRepository.find({
+            where: { orderId: In(orderIds) },
+          })
+        : [];
+    const itemsByOrder = new Map<string, OrderItem[]>();
+    for (const item of items) {
+      const list = itemsByOrder.get(item.orderId) ?? [];
+      list.push(item);
+      itemsByOrder.set(item.orderId, list);
+    }
+
+    return orders.map((o) => toPublicOrder(o, itemsByOrder.get(o.id) ?? []));
+  }
+
+  // Req 8-9: explicit transition table, not ad hoc if/else. `actor` is
+  // undefined for internal system-driven transitions (the stub-payment
+  // settlement below); specs/delivery/design.md's narrower DELIVERY_AGENT
+  // guard only applies when a DELIVERY_AGENT is the one calling in.
   async updateStatus(
     id: string,
     newStatus: OrderStatus,
+    actor?: JwtPayload,
   ): Promise<OrderWithItems> {
     const order = await this.ordersRepository.findOne({ where: { id } });
     if (!order) {
       throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    if (actor?.role === UserRole.DELIVERY_AGENT) {
+      const permitted =
+        newStatus === OrderStatus.DELIVERED &&
+        order.status === OrderStatus.DISPATCHED &&
+        order.assignedAgentId === actor.sub;
+      if (!permitted) {
+        throw new ApiException(
+          HttpStatus.FORBIDDEN,
+          'FORBIDDEN_ROLE',
+          'Delivery agents may only mark their own dispatched orders as delivered.',
+        );
+      }
     }
 
     if (!canTransition(order.status, newStatus)) {

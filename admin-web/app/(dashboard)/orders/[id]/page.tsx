@@ -2,9 +2,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { apiFetch, ApiError } from '@/lib/api';
 import type { Order } from '@/lib/types';
-import { PollingRefresh } from '../polling-refresh';
-import { StatusBadge } from '../status-badge';
+import { PollingRefresh } from '@/app/components/polling-refresh';
+import { StatusBadge } from '@/app/components/status-badge';
+import { AssignAgentForm } from '../assign-agent-form';
 import { StatusUpdateForm } from '../status-update-form';
+import { getAssignableAgents } from '../agents';
 
 export default async function OrderDetailPage({
   params,
@@ -25,6 +27,17 @@ export default async function OrderDetailPage({
   }
 
   const itemsTotal = order.total_amount - order.delivery_fee;
+
+  // specs/delivery/requirements.md Req 1-2: an agent can only be (re)assigned
+  // once an order is being fulfilled. Also fetch agents when one's already
+  // assigned (e.g. a DELIVERED order) purely to resolve its name for display.
+  const canAssignAgent =
+    order.status === 'PROCESSING' || order.status === 'DISPATCHED';
+  const agents =
+    canAssignAgent || order.assigned_agent_id
+      ? await getAssignableAgents()
+      : [];
+  const assignedAgent = agents.find((a) => a.id === order.assigned_agent_id);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -52,6 +65,12 @@ export default async function OrderDetailPage({
             : order.status === 'CANCELLED'
               ? 'Not paid / cancelled'
               : 'Paid'}
+        </dd>
+        <dt className="text-gray-500">Delivery agent</dt>
+        <dd>
+          {assignedAgent
+            ? `${assignedAgent.full_name} (${assignedAgent.phone_number})`
+            : order.assigned_agent_id ?? 'Unassigned'}
         </dd>
       </dl>
 
@@ -97,6 +116,14 @@ export default async function OrderDetailPage({
       </table>
 
       <StatusUpdateForm orderId={order.id} currentStatus={order.status} />
+
+      {canAssignAgent && (
+        <AssignAgentForm
+          orderId={order.id}
+          agents={agents}
+          currentAgentId={order.assigned_agent_id}
+        />
+      )}
     </div>
   );
 }

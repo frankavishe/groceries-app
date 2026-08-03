@@ -12,6 +12,16 @@ const ADMIN = {
   password: 'ChangeMe123!',
 };
 
+// M7 delivery-agent view (specs/delivery) manual testing — register endpoint
+// only ever creates CUSTOMER accounts, so a DELIVERY_AGENT needs seeding same
+// as the admin.
+const DELIVERY_AGENT = {
+  fullName: 'Seed Delivery Agent',
+  phoneNumber: '+255700000002',
+  email: 'agent@groceries.local',
+  password: 'ChangeMe123!',
+};
+
 const CATEGORIES = [
   { name: 'Fruits & Vegetables', iconUrl: null },
   { name: 'Dairy & Eggs', iconUrl: null },
@@ -140,6 +150,20 @@ async function seed() {
       [ADMIN.fullName, ADMIN.phoneNumber, ADMIN.email, passwordHash],
     );
     console.log(`Seeded admin user (${ADMIN.phoneNumber})`);
+
+    const agentPasswordHash = await bcrypt.hash(DELIVERY_AGENT.password, 10);
+    await queryRunner.query(
+      `INSERT INTO users (full_name, phone_number, email, password_hash, role, is_active, is_verified)
+       VALUES ($1, $2, $3, $4, 'DELIVERY_AGENT', TRUE, TRUE)
+       ON CONFLICT (phone_number) DO NOTHING`,
+      [
+        DELIVERY_AGENT.fullName,
+        DELIVERY_AGENT.phoneNumber,
+        DELIVERY_AGENT.email,
+        agentPasswordHash,
+      ],
+    );
+    console.log(`Seeded delivery agent user (${DELIVERY_AGENT.phoneNumber})`);
 
     // Categories/products have no unique constraint on `name` in the spec schema
     // (see specs/database/design.md), so idempotency is check-before-insert by name.

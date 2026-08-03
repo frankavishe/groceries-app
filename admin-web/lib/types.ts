@@ -37,9 +37,18 @@ export interface OrderItem {
 export interface Order {
   id: string;
   user_id: string | null;
+  assigned_agent_id: string | null;
   status: OrderStatus;
   total_amount: number;
   delivery_fee: number;
   items: OrderItem[];
   created_at: string;
+}
+
+// specs/delivery/requirements.md — a DELIVERY_AGENT candidate for order
+// assignment (GET /delivery/agents, admin-only).
+export interface DeliveryAgent {
+  id: string;
+  full_name: string;
+  phone_number: string;
 }

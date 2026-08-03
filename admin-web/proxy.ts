@@ -24,6 +24,9 @@ function decodeRole(token: string): string | null {
 
 // Req 1-2: gate every admin route behind a valid ADMIN session; redirect
 // unauthenticated visitors to /login and non-admin sessions to /unauthorized.
+// specs/delivery/tasks.md's open decision (agents reuse this same admin-web
+// login, scoped by role) adds a second gate: /delivery/* requires
+// DELIVERY_AGENT instead of ADMIN, and everything else remains ADMIN-only.
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
@@ -32,6 +35,9 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith('/login')) {
     if (role === 'ADMIN') {
       return NextResponse.redirect(new URL('/categories', request.url));
+    }
+    if (role === 'DELIVERY_AGENT') {
+      return NextResponse.redirect(new URL('/delivery', request.url));
     }
     return NextResponse.next();
   }
@@ -43,6 +49,14 @@ export function proxy(request: NextRequest) {
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
+
+  if (pathname.startsWith('/delivery')) {
+    if (role !== 'DELIVERY_AGENT') {
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
+    }
+    return NextResponse.next();
+  }
+
   if (role !== 'ADMIN') {
     return NextResponse.redirect(new URL('/unauthorized', request.url));
   }

@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { ORDER_STATUSES } from '@/lib/order-status';
 import type { Order, Paginated } from '@/lib/types';
-import { PollingRefresh } from './polling-refresh';
-import { StatusBadge } from './status-badge';
+import { PollingRefresh } from '@/app/components/polling-refresh';
+import { StatusBadge } from '@/app/components/status-badge';
 
 interface OrdersPageProps {
   searchParams: Promise<{ page?: string; status?: string }>;
