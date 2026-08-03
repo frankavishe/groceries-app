@@ -20,6 +20,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <NavLink href="/categories">Categories</NavLink>
           <NavLink href="/products">Products</NavLink>
           <NavLink href="/orders">Orders</NavLink>
+          <NavLink href="/transactions">Transactions</NavLink>
         </nav>
         <form action={logoutAction} className="flex items-center gap-3">
           <span className="text-sm text-gray-500">{session.phone_number}</span>

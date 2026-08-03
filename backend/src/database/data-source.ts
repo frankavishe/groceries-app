@@ -3,6 +3,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { Category } from '../categories/entities/category.entity';
 import { OrderItem } from '../orders/entities/order-item.entity';
 import { Order } from '../orders/entities/order.entity';
+import { PaymentTransaction } from '../payments/entities/payment-transaction.entity';
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -18,7 +19,7 @@ export const dataSourceOptions: PostgresDataSourceOptions = {
   username: process.env.DB_USER ?? 'groceries',
   password: process.env.DB_PASSWORD ?? 'groceries',
   database: process.env.DB_NAME ?? 'groceries',
-  entities: [User, Category, Product, Order, OrderItem],
+  entities: [User, Category, Product, Order, OrderItem, PaymentTransaction],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   synchronize: false,
 };

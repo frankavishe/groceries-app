@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_exception.dart';
 import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/orders_provider.dart';
+import '../../providers/payments_provider.dart';
 import 'payment_pending_screen.dart';
 
+// Backend enum values (backend/src/payments/entities/payment-transaction.entity.ts).
 enum MobileMoneyProvider { mpesa, mixxByYas, airtelMoney }
 
 extension on MobileMoneyProvider {
@@ -20,13 +21,25 @@ extension on MobileMoneyProvider {
         return 'Airtel Money';
     }
   }
+
+  String get apiValue {
+    switch (this) {
+      case MobileMoneyProvider.mpesa:
+        return 'MPESA';
+      case MobileMoneyProvider.mixxByYas:
+        return 'MIXX_BY_YAS';
+      case MobileMoneyProvider.airtelMoney:
+        return 'AIRTEL_MONEY';
+    }
+  }
 }
 
-// Req 10: select a provider + phone number, then initiate payment. Backed by
-// the M6 stub (specs/mobile-app/design.md "Stub Payment for Early
-// Development") until the real payments engine (M8/M9) exists — the provider
-// choice and phone number aren't sent to the stub endpoint, but are kept in
-// the UI so the flow matches what the real integration will look like.
+// Req 10: select a provider + phone number, then initiate payment via
+// POST /payments/initiate (specs/payments/requirements.md Req 1). Only M-Pesa
+// has a working adapter as of M8 (specs/payments/design.md's Per-Provider
+// Notes) — selecting Mixx by Yas/Airtel Money still submits like a real
+// attempt and surfaces the backend's PROVIDER_NOT_SUPPORTED error, rather
+// than hiding those options until M9.
 class PaymentProviderSelectScreen extends ConsumerStatefulWidget {
   final Order order;
 
@@ -66,12 +79,21 @@ class _PaymentProviderSelectScreenState
       _submitting = true;
       _error = null;
     });
+    final phoneNumber = _phoneController.text.trim();
     try {
-      await ref.read(ordersRepositoryProvider).initiateStubPayment(widget.order.id);
+      await ref.read(paymentsRepositoryProvider).initiatePayment(
+        orderId: widget.order.id,
+        provider: _provider.apiValue,
+        phoneNumber: phoneNumber,
+      );
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => PaymentPendingScreen(orderId: widget.order.id),
+          builder: (_) => PaymentPendingScreen(
+            orderId: widget.order.id,
+            provider: _provider.apiValue,
+            phoneNumber: phoneNumber,
+          ),
         ),
       );
     } on ApiException catch (e) {

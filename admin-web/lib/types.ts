@@ -52,3 +52,26 @@ export interface DeliveryAgent {
   full_name: string;
   phone_number: string;
 }
+
+export type PaymentProvider = 'MPESA' | 'MIXX_BY_YAS' | 'AIRTEL_MONEY';
+export type PaymentStatus = 'INITIATED' | 'PENDING' | 'SUCCESSFUL' | 'FAILED';
+
+// specs/payments/requirements.md Req 12 — GET /payments/transactions.
+export interface PaymentTransaction {
+  id: string;
+  order_id: string;
+  provider: PaymentProvider;
+  phone_number: string;
+  amount: number;
+  reference_id: string | null;
+  checkout_request_id: string | null;
+  status: PaymentStatus;
+  created_at: string;
+}
+
+// Req 13 — GET /payments/summary.
+export interface PaymentProviderSummary {
+  provider: PaymentProvider;
+  count: number;
+  total_amount: number;
+}

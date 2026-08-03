@@ -28,14 +28,6 @@ class OrdersRepository {
     return Order.fromJson(response);
   }
 
-  // M6 stub payment (see backend/src/orders/orders.service.ts
-  // initiateStubPayment) — not the real payments engine.
-  Future<Order> initiateStubPayment(String orderId) async {
-    final response =
-        await apiClient.post('/orders/$orderId/stub-pay') as Map<String, dynamic>;
-    return Order.fromJson(response);
-  }
-
   Future<Order> getOrder(String orderId) async {
     final response = await apiClient.get('/orders/$orderId') as Map<String, dynamic>;
     return Order.fromJson(response);

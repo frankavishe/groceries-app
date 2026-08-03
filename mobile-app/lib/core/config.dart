@@ -7,13 +7,4 @@ class AppConfig {
     'API_BASE_URL',
     defaultValue: 'http://10.0.2.2:4000/api/v1',
   );
-
-  // Gates the mocked "always succeeds" payment path (POST /orders/:id/stub-pay)
-  // described in specs/mobile-app/design.md. Must be forced false in release
-  // builds once the real payments engine (M8/M9) lands:
-  //   flutter build apk --dart-define=STUB_PAYMENTS=false
-  static const bool stubPaymentsEnabled = bool.fromEnvironment(
-    'STUB_PAYMENTS',
-    defaultValue: true,
-  );
 }
