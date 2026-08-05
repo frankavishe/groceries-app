@@ -10,6 +10,8 @@ import { ApiException } from '../common/exceptions/api-exception';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { OrderStatus } from '../orders/entities/order.entity';
 import { OrdersService } from '../orders/orders.service';
+import { MockAirtelMoneyAdapter } from './adapters/airtel-money/mock-airtel-money.adapter';
+import { MockMixxYasAdapter } from './adapters/mixx-yas/mock-mixx-yas.adapter';
 import { MockMpesaAdapter } from './adapters/mpesa/mock-mpesa.adapter';
 import {
   PaymentProviderAdapter,
@@ -44,9 +46,10 @@ export interface ProviderSummary {
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
-  // Req 1 / M8 scope ("one payment provider live"): only MPESA has a working
-  // adapter. MIXX_BY_YAS/AIRTEL_MONEY are rejected as unsupported until M9
-  // adds their adapters here, per specs/payments/tasks.md.
+  // Req 1 / M9 scope ("all 3 providers live"): every PaymentProvider has a
+  // registered adapter as of M9 — see specs/payments/design.md's Per-Provider
+  // Notes for why all three are mock adapters (no MNO sandbox credentials
+  // exist for this project) rather than real integrations.
   private readonly adapters: Partial<
     Record<PaymentProvider, PaymentProviderAdapter>
   >;
@@ -56,8 +59,14 @@ export class PaymentsService {
     private readonly transactionsRepository: Repository<PaymentTransaction>,
     private readonly ordersService: OrdersService,
     mockMpesaAdapter: MockMpesaAdapter,
+    mockMixxYasAdapter: MockMixxYasAdapter,
+    mockAirtelMoneyAdapter: MockAirtelMoneyAdapter,
   ) {
-    this.adapters = { [PaymentProvider.MPESA]: mockMpesaAdapter };
+    this.adapters = {
+      [PaymentProvider.MPESA]: mockMpesaAdapter,
+      [PaymentProvider.MIXX_BY_YAS]: mockMixxYasAdapter,
+      [PaymentProvider.AIRTEL_MONEY]: mockAirtelMoneyAdapter,
+    };
   }
 
   // Req 1-4: derive amount server-side, create an INITIATED row, delegate to

@@ -35,11 +35,10 @@ extension on MobileMoneyProvider {
 }
 
 // Req 10: select a provider + phone number, then initiate payment via
-// POST /payments/initiate (specs/payments/requirements.md Req 1). Only M-Pesa
-// has a working adapter as of M8 (specs/payments/design.md's Per-Provider
-// Notes) — selecting Mixx by Yas/Airtel Money still submits like a real
-// attempt and surfaces the backend's PROVIDER_NOT_SUPPORTED error, rather
-// than hiding those options until M9.
+// POST /payments/initiate (specs/payments/requirements.md Req 1). As of M9
+// all three providers have a working (mock) adapter server-side
+// (specs/payments/design.md's Per-Provider Notes) — no client-side
+// special-casing needed here.
 class PaymentProviderSelectScreen extends ConsumerStatefulWidget {
   final Order order;
 
