@@ -56,11 +56,11 @@ export default async function OrderDetailPage({
       </div>
 
       <dl className="grid grid-cols-2 gap-y-1 text-sm">
-        <dt className="text-gray-500">Customer</dt>
+        <dt className="text-gray-500 dark:text-gray-400">Customer</dt>
         <dd>{order.user_id ?? '—'}</dd>
-        <dt className="text-gray-500">Placed</dt>
+        <dt className="text-gray-500 dark:text-gray-400">Placed</dt>
         <dd>{new Date(order.created_at).toLocaleString()}</dd>
-        <dt className="text-gray-500">Payment status</dt>
+        <dt className="text-gray-500 dark:text-gray-400">Payment status</dt>
         <dd>
           {order.status === 'PENDING'
             ? 'Awaiting payment'
@@ -68,7 +68,7 @@ export default async function OrderDetailPage({
               ? 'Not paid / cancelled'
               : 'Paid'}
         </dd>
-        <dt className="text-gray-500">Delivery agent</dt>
+        <dt className="text-gray-500 dark:text-gray-400">Delivery agent</dt>
         <dd>
           {assignedAgent
             ? `${assignedAgent.full_name} (${assignedAgent.phone_number})`
@@ -78,7 +78,7 @@ export default async function OrderDetailPage({
 
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-gray-200 text-sm text-gray-500">
+          <tr className="border-b border-gray-200 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
             <th className="py-2 font-medium">Product</th>
             <th className="py-2 font-medium">Qty</th>
             <th className="py-2 font-medium">Unit price</th>
@@ -87,7 +87,7 @@ export default async function OrderDetailPage({
         </thead>
         <tbody>
           {order.items.map((item) => (
-            <tr key={item.product_id} className="border-b border-gray-100">
+            <tr key={item.product_id} className="border-b border-gray-100 dark:border-gray-800">
               <td className="py-2">{item.product_id.slice(0, 8)}</td>
               <td className="py-2">{item.quantity}</td>
               <td className="py-2">{item.unit_price.toLocaleString()} TZS</td>
@@ -97,13 +97,13 @@ export default async function OrderDetailPage({
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={3} className="pt-2 text-right text-sm text-gray-500">
+            <td colSpan={3} className="pt-2 text-right text-sm text-gray-500 dark:text-gray-400">
               Items subtotal
             </td>
             <td className="pt-2">{itemsTotal.toLocaleString()} TZS</td>
           </tr>
           <tr>
-            <td colSpan={3} className="text-right text-sm text-gray-500">
+            <td colSpan={3} className="text-right text-sm text-gray-500 dark:text-gray-400">
               Delivery fee
             </td>
             <td>{order.delivery_fee.toLocaleString()} TZS</td>

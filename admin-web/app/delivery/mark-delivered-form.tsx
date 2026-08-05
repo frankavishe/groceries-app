@@ -14,12 +14,12 @@ export function MarkDeliveredForm({ orderId }: { orderId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50"
+        className="rounded bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
       >
         {pending ? 'Marking…' : 'Mark delivered'}
       </button>
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}

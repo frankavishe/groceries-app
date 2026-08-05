@@ -18,7 +18,11 @@ export function StatusUpdateForm({
   const [state, formAction, pending] = useActionState(action, initialState);
 
   if (nextStatuses.length === 0) {
-    return <p className="text-sm text-gray-500">No further status transitions available.</p>;
+    return (
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        No further status transitions available.
+      </p>
+    );
   }
 
   return (
@@ -29,7 +33,7 @@ export function StatusUpdateForm({
           name="status"
           defaultValue=""
           required
-          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
         >
           <option value="" disabled>
             Select…
@@ -44,12 +48,12 @@ export function StatusUpdateForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
       >
         {pending ? 'Updating…' : 'Update'}
       </button>
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}

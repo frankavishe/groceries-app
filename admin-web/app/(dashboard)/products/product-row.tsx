@@ -16,27 +16,29 @@ export function ProductRow({
   const category = categories.find((c) => c.id === product.category_id);
 
   return (
-    <tr className="border-b border-gray-100">
+    <tr className="border-b border-gray-100 dark:border-gray-800">
       <td className="py-2">
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.image_url} alt="" className="h-10 w-10 rounded object-cover" />
         ) : (
-          <div className="h-10 w-10 rounded bg-gray-100" />
+          <div className="h-10 w-10 rounded bg-gray-100 dark:bg-gray-800" />
         )}
       </td>
       <td className="py-2">{product.name}</td>
       <td className="py-2">{category?.name ?? '—'}</td>
       <td className="py-2">{product.price.toLocaleString()} TZS</td>
       <td className="py-2">
-        <span className={product.stock_quantity === 0 ? 'text-red-600' : undefined}>
+        <span className={product.stock_quantity === 0 ? 'text-red-600 dark:text-red-400' : undefined}>
           {product.stock_quantity} {product.unit}
         </span>
       </td>
       <td className="py-2">
         <span
           className={`rounded-full px-2 py-0.5 text-xs ${
-            product.is_available ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+            product.is_available
+              ? 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300'
+              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
           }`}
         >
           {product.is_available ? 'Active' : 'Inactive'}

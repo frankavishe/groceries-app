@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
+/* Manual (class-based) dark mode instead of Tailwind's default media-query
+   variant: ThemeToggle and the inline script in layout.tsx both flip `.dark`
+   on <html>, so `dark:` classes need to key off that class, not the OS
+   preference, once a user has picked a theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -10,13 +21,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

@@ -12,7 +12,7 @@ export default async function CategoriesPage() {
       <CategoryForm />
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-gray-200 text-sm text-gray-500">
+          <tr className="border-b border-gray-200 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
             <th className="py-2 font-medium">Icon</th>
             <th className="py-2 font-medium">Name</th>
             <th className="py-2 font-medium">Status</th>
@@ -26,7 +26,7 @@ export default async function CategoriesPage() {
         </tbody>
       </table>
       {categories.length === 0 && (
-        <p className="text-sm text-gray-500">No categories yet.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No categories yet.</p>
       )}
     </div>
   );

@@ -20,20 +20,22 @@ export function CategoryRow({ category }: { category: Category }) {
   }
 
   return (
-    <tr className="border-b border-gray-100">
+    <tr className="border-b border-gray-100 dark:border-gray-800">
       <td className="py-2">
         {category.icon_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={category.icon_url} alt="" className="h-8 w-8 rounded object-cover" />
         ) : (
-          <div className="h-8 w-8 rounded bg-gray-100" />
+          <div className="h-8 w-8 rounded bg-gray-100 dark:bg-gray-800" />
         )}
       </td>
       <td className="py-2">{category.name}</td>
       <td className="py-2">
         <span
           className={`rounded-full px-2 py-0.5 text-xs ${
-            category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+            category.is_active
+              ? 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300'
+              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
           }`}
         >
           {category.is_active ? 'Active' : 'Inactive'}
