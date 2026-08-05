@@ -35,12 +35,19 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
         {PROVIDERS.map((provider) => {
           const row = summary.find((s) => s.provider === provider);
           return (
-            <div key={provider} className="rounded border border-gray-200 px-4 py-3">
-              <div className="text-sm text-gray-500">{providerLabel(provider)}</div>
+            <div
+              key={provider}
+              className="rounded border border-gray-200 px-4 py-3 dark:border-gray-800"
+            >
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {providerLabel(provider)}
+              </div>
               <div className="text-lg font-semibold">
                 {(row?.total_amount ?? 0).toLocaleString()} TZS
               </div>
-              <div className="text-sm text-gray-500">{row?.count ?? 0} transactions</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {row?.count ?? 0} transactions
+              </div>
             </div>
           );
         })}
@@ -52,7 +59,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
           <select
             name="provider"
             defaultValue={params.provider ?? ''}
-            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
           >
             <option value="">All providers</option>
             {PROVIDERS.map((provider) => (
@@ -67,7 +74,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
           <select
             name="status"
             defaultValue={params.status ?? ''}
-            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
           >
             <option value="">All statuses</option>
             {STATUSES.map((status) => (
@@ -77,14 +84,17 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
             ))}
           </select>
         </label>
-        <button type="submit" className="rounded border border-gray-300 px-4 py-2 text-sm">
+        <button
+          type="submit"
+          className="rounded border border-gray-300 px-4 py-2 text-sm dark:border-gray-700"
+        >
           Filter
         </button>
       </form>
 
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-gray-200 text-sm text-gray-500">
+          <tr className="border-b border-gray-200 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
             <th className="py-2 font-medium">Order</th>
             <th className="py-2 font-medium">Provider</th>
             <th className="py-2 font-medium">Phone</th>
@@ -95,7 +105,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
         </thead>
         <tbody>
           {result.data.map((transaction) => (
-            <tr key={transaction.id} className="border-b border-gray-100">
+            <tr key={transaction.id} className="border-b border-gray-100 dark:border-gray-800">
               <td className="py-2">
                 <Link href={`/orders/${transaction.order_id}`} className="underline">
                   {transaction.order_id.slice(0, 8)}
@@ -113,7 +123,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
         </tbody>
       </table>
       {result.data.length === 0 && (
-        <p className="text-sm text-gray-500">No transactions found.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No transactions found.</p>
       )}
 
       {totalPages > 1 && (
@@ -123,7 +133,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
               ← Previous
             </Link>
           )}
-          <span className="text-gray-500">
+          <span className="text-gray-500 dark:text-gray-400">
             Page {page} of {totalPages}
           </span>
           {page < totalPages && (

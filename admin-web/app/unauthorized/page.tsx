@@ -7,7 +7,7 @@ export default function UnauthorizedPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col items-center justify-center gap-4 px-4 text-center">
       <h1 className="text-2xl font-semibold">Not authorized</h1>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-500 dark:text-gray-400">
         This account does not have access to this part of the dashboard.
       </p>
       <Link href="/login" className="text-sm underline">

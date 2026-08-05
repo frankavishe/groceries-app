@@ -34,7 +34,7 @@ export function ProductForm({
           type="text"
           required
           defaultValue={product?.name}
-          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -43,7 +43,7 @@ export function ProductForm({
           name="description"
           defaultValue={product?.description ?? ''}
           rows={3}
-          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
         />
       </label>
       <div className="flex gap-4">
@@ -56,7 +56,7 @@ export function ProductForm({
             step="0.01"
             required
             defaultValue={product?.price}
-            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -67,7 +67,7 @@ export function ProductForm({
             required
             placeholder="kg, pack, bunch…"
             defaultValue={product?.unit}
-            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
           />
         </label>
       </div>
@@ -77,7 +77,7 @@ export function ProductForm({
           <select
             name="category_id"
             defaultValue={product?.category_id ?? ''}
-            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
           >
             <option value="">No category</option>
             {categories.map((c) => (
@@ -95,7 +95,7 @@ export function ProductForm({
             min="0"
             step="1"
             defaultValue={product?.stock_quantity}
-            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+            className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
           />
         </label>
       </div>
@@ -122,19 +122,19 @@ export function ProductForm({
         <button
           type="submit"
           disabled={pending}
-          className="w-fit rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="w-fit rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
         >
           {pending ? 'Saving…' : product ? 'Save changes' : 'Create product'}
         </button>
-        {saved && <span className="text-sm text-green-700">Saved.</span>}
+        {saved && <span className="text-sm text-green-700 dark:text-green-400">Saved.</span>}
       </div>
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}
       {!product && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           You&apos;ll be able to upload an image after creating the product.
         </p>
       )}

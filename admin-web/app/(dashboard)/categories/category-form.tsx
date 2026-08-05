@@ -34,7 +34,7 @@ export function CategoryForm({
       onSubmit={() => {
         submittedRef.current = true;
       }}
-      className="flex flex-wrap items-end gap-3 rounded border border-gray-200 p-4"
+      className="flex flex-wrap items-end gap-3 rounded border border-gray-200 p-4 dark:border-gray-800"
     >
       <label className="flex flex-col gap-1 text-sm">
         Name
@@ -43,7 +43,7 @@ export function CategoryForm({
           type="text"
           required
           defaultValue={category?.name}
-          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -66,7 +66,7 @@ export function CategoryForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
       >
         {pending ? 'Saving…' : category ? 'Save' : 'Add category'}
       </button>
@@ -76,7 +76,7 @@ export function CategoryForm({
         </button>
       )}
       {state?.error && (
-        <p role="alert" className="w-full text-sm text-red-600">
+        <p role="alert" className="w-full text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}

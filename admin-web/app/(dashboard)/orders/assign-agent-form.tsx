@@ -19,7 +19,9 @@ export function AssignAgentForm({
   const [state, formAction, pending] = useActionState(action, initialState);
 
   if (agents.length === 0) {
-    return <p className="text-sm text-gray-500">No delivery agents available.</p>;
+    return (
+      <p className="text-sm text-gray-500 dark:text-gray-400">No delivery agents available.</p>
+    );
   }
 
   return (
@@ -30,7 +32,7 @@ export function AssignAgentForm({
           name="agent_id"
           defaultValue={currentAgentId ?? ''}
           required
-          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black"
+          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-black dark:border-gray-700 dark:focus:border-white"
         >
           <option value="" disabled>
             Select…
@@ -45,12 +47,12 @@ export function AssignAgentForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
       >
         {pending ? 'Assigning…' : 'Assign'}
       </button>
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}
