@@ -1,3 +1,4 @@
+import '../core/config.dart';
 import 'product.dart';
 
 // Persisted to Hive as {productId, quantity, priceSnapshot} per
@@ -47,7 +48,10 @@ class CartItem {
     productId: json['productId'] as String,
     name: json['name'] as String,
     unit: json['unit'] as String,
-    imageUrl: json['imageUrl'] as String?,
+    // Re-resolved (idempotent, see AppConfig.resolveImageUrl) rather than
+    // trusted as-is: a cart item persisted to Hive before this fix existed
+    // would otherwise carry a stale, unreachable host forever.
+    imageUrl: AppConfig.resolveImageUrl(json['imageUrl'] as String?),
     priceSnapshot: (json['priceSnapshot'] as num).toDouble(),
     quantity: json['quantity'] as int,
   );
