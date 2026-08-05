@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { apiFetch, ApiError } from '@/lib/api';
+import { getToken } from '@/lib/session';
 import type { Order } from '@/lib/types';
-import { PollingRefresh } from '@/app/components/polling-refresh';
+import { OrderSocketRefresh } from '@/app/components/order-socket-refresh';
 import { StatusBadge } from '@/app/components/status-badge';
 import { AssignAgentForm } from '../assign-agent-form';
 import { StatusUpdateForm } from '../status-update-form';
@@ -38,10 +39,11 @@ export default async function OrderDetailPage({
       ? await getAssignableAgents()
       : [];
   const assignedAgent = agents.find((a) => a.id === order.assigned_agent_id);
+  const token = await getToken();
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <PollingRefresh />
+      <OrderSocketRefresh token={token} />
       <div>
         <Link href="/orders" className="text-sm underline">
           ← Back to orders

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { ORDER_STATUSES } from '@/lib/order-status';
+import { getToken } from '@/lib/session';
 import type { Order, Paginated } from '@/lib/types';
-import { PollingRefresh } from '@/app/components/polling-refresh';
+import { OrderSocketRefresh } from '@/app/components/order-socket-refresh';
 import { StatusBadge } from '@/app/components/status-badge';
 
 interface OrdersPageProps {
@@ -18,10 +19,11 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   const result = await apiFetch<Paginated<Order>>(`/orders?${query}`);
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
+  const token = await getToken();
 
   return (
     <div className="flex flex-col gap-6">
-      <PollingRefresh />
+      <OrderSocketRefresh token={token} />
       <h1 className="text-xl font-semibold">Orders</h1>
 
       <form className="flex items-end gap-3" method="get">

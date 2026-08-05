@@ -22,6 +22,12 @@ export const envValidationSchema = Joi.object({
   // Seconds. Default 86400 = 24h (see ISSUE-009 — confirm before Phase 11 hardening).
   JWT_ACCESS_TOKEN_TTL: Joi.number().default(86400),
 
+  // WebSocket gateway CORS origin (src/realtime), read directly from
+  // process.env at class-decoration time — see orders.gateway.ts's comment on
+  // why ConfigService can't be used there. Defaults to admin-web's local dev
+  // origin if unset.
+  ADMIN_WEB_ORIGIN: Joi.string().allow('').optional(),
+
   // Not yet required — wired up in later phases (auth/OTP, image upload, payments).
   AFRICAS_TALKING_USERNAME: Joi.string().allow('').optional(),
   AFRICAS_TALKING_API_KEY: Joi.string().allow('').optional(),
