@@ -1,3 +1,5 @@
+import '../core/config.dart';
+
 // Mirrors backend/src/products/products.mapper.ts's PublicProduct.
 class Product {
   final String id;
@@ -32,7 +34,7 @@ class Product {
     unit: json['unit'] as String,
     stockQuantity: json['stock_quantity'] as int,
     inStock: json['in_stock'] as bool,
-    imageUrl: json['image_url'] as String?,
+    imageUrl: AppConfig.resolveImageUrl(json['image_url'] as String?),
     categoryId: json['category_id'] as int?,
     isAvailable: json['is_available'] as bool,
   );
