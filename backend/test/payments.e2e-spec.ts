@@ -7,6 +7,11 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import {
+  AIRTEL_MONEY_SIGNATURE_HEADER,
+  mockAirtelMoneyApiKey,
+} from '../src/payments/adapters/airtel-money/mock-airtel-money.adapter';
+import { signMockMixxYasFields } from '../src/payments/adapters/mixx-yas/mock-mixx-yas.adapter';
 import { signMockMpesaPayload } from '../src/payments/adapters/mpesa/mock-mpesa.adapter';
 import { PaymentTransaction } from '../src/payments/entities/payment-transaction.entity';
 import { User, UserRole } from '../src/users/entities/user.entity';
@@ -71,6 +76,38 @@ function mpesaCallbackBody(
         ResultDesc:
           resultCode === 0 ? 'Success' : 'The balance is insufficient.',
       },
+    },
+  };
+}
+
+function mixxYasCallbackFields(
+  referenceId: string,
+  checkoutRequestId: string,
+  status: 'SUCCESS' | 'FAILED',
+  amount: number,
+) {
+  return {
+    ReferenceID: referenceId,
+    TransactionID: checkoutRequestId,
+    TxnStatus: status,
+    Msisdn: '+255700000099',
+    Amount: amount,
+  };
+}
+
+function airtelMoneyCallbackBody(
+  referenceId: string,
+  checkoutRequestId: string,
+  statusCode: 'TS' | 'TF',
+  amount: number,
+) {
+  return {
+    transaction: {
+      id: referenceId,
+      airtel_money_id: checkoutRequestId,
+      status_code: statusCode,
+      message: statusCode === 'TS' ? 'Success' : 'Failed',
+      amount,
     },
   };
 }
@@ -165,8 +202,9 @@ describe('Payments (e2e)', () => {
     return res.body as OrderResponseBody;
   }
 
-  async function initiate(
+  async function initiateWithProvider(
     orderId: string,
+    provider: string,
     token = customerToken,
   ): Promise<TransactionResponseBody> {
     const res = await request(app.getHttpServer())
@@ -174,11 +212,18 @@ describe('Payments (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         order_id: orderId,
-        provider: 'MPESA',
+        provider,
         phone_number: '+255700000099',
       })
       .expect(201);
     return res.body as TransactionResponseBody;
+  }
+
+  async function initiate(
+    orderId: string,
+    token = customerToken,
+  ): Promise<TransactionResponseBody> {
+    return initiateWithProvider(orderId, 'MPESA', token);
   }
 
   async function sendCallback(
@@ -253,20 +298,108 @@ describe('Payments (e2e)', () => {
       .expect(404);
   });
 
-  it('rejects a provider with no adapter yet with 400 (M8: M-Pesa only)', async () => {
+  it('initiates a payment via Mixx by Yas and cascades a successful callback (M9)', async () => {
     const order = await createPendingOrder();
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/payments/initiate')
-      .set('Authorization', `Bearer ${customerToken}`)
-      .send({
-        order_id: order.id,
-        provider: 'MIXX_BY_YAS',
-        phone_number: '+255700000099',
-      })
-      .expect(400);
-    expect((res.body as ErrorResponseBody).error).toBe(
-      'PROVIDER_NOT_SUPPORTED',
+    const transaction = await initiateWithProvider(order.id, 'MIXX_BY_YAS');
+    expect(transaction.provider).toBe('MIXX_BY_YAS');
+    expect(transaction.checkout_request_id).toBeTruthy();
+    expect(transaction.reference_id).toBeTruthy();
+
+    const fields = mixxYasCallbackFields(
+      transaction.reference_id!,
+      transaction.checkout_request_id!,
+      'SUCCESS',
+      order.total_amount,
     );
+    await request(app.getHttpServer())
+      .post('/api/v1/payments/callback/mixx_yas')
+      .send({ ...fields, Signature: signMockMixxYasFields(fields) })
+      .expect(200);
+
+    const updated = await transactionsRepository.findOneBy({
+      id: transaction.id,
+    });
+    expect(updated!.status).toBe('SUCCESSFUL');
+
+    const orderRes = await request(app.getHttpServer())
+      .get(`/api/v1/orders/${order.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect((orderRes.body as OrderResponseBody).status).toBe('PAID');
+  });
+
+  it('rejects a Mixx by Yas callback with an invalid signature and writes nothing (M9)', async () => {
+    const order = await createPendingOrder();
+    const transaction = await initiateWithProvider(order.id, 'MIXX_BY_YAS');
+    const fields = mixxYasCallbackFields(
+      transaction.reference_id!,
+      transaction.checkout_request_id!,
+      'SUCCESS',
+      order.total_amount,
+    );
+
+    await request(app.getHttpServer())
+      .post('/api/v1/payments/callback/mixx_yas')
+      .send({ ...fields, Signature: 'not-a-real-signature' })
+      .expect(401);
+
+    const unchanged = await transactionsRepository.findOneBy({
+      id: transaction.id,
+    });
+    expect(unchanged!.status).toBe('INITIATED');
+  });
+
+  it('initiates a payment via Airtel Money and cascades a successful callback (M9)', async () => {
+    const order = await createPendingOrder();
+    const transaction = await initiateWithProvider(order.id, 'AIRTEL_MONEY');
+    expect(transaction.provider).toBe('AIRTEL_MONEY');
+    expect(transaction.checkout_request_id).toBeTruthy();
+    expect(transaction.reference_id).toBeTruthy();
+
+    const body = airtelMoneyCallbackBody(
+      transaction.reference_id!,
+      transaction.checkout_request_id!,
+      'TS',
+      order.total_amount,
+    );
+    await request(app.getHttpServer())
+      .post('/api/v1/payments/callback/airtel_money')
+      .set(AIRTEL_MONEY_SIGNATURE_HEADER, mockAirtelMoneyApiKey())
+      .send(body)
+      .expect(200);
+
+    const updated = await transactionsRepository.findOneBy({
+      id: transaction.id,
+    });
+    expect(updated!.status).toBe('SUCCESSFUL');
+
+    const orderRes = await request(app.getHttpServer())
+      .get(`/api/v1/orders/${order.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect((orderRes.body as OrderResponseBody).status).toBe('PAID');
+  });
+
+  it('rejects an Airtel Money callback with the wrong API key and writes nothing (M9)', async () => {
+    const order = await createPendingOrder();
+    const transaction = await initiateWithProvider(order.id, 'AIRTEL_MONEY');
+    const body = airtelMoneyCallbackBody(
+      transaction.reference_id!,
+      transaction.checkout_request_id!,
+      'TS',
+      order.total_amount,
+    );
+
+    await request(app.getHttpServer())
+      .post('/api/v1/payments/callback/airtel_money')
+      .set(AIRTEL_MONEY_SIGNATURE_HEADER, 'not-the-real-key')
+      .send(body)
+      .expect(401);
+
+    const unchanged = await transactionsRepository.findOneBy({
+      id: transaction.id,
+    });
+    expect(unchanged!.status).toBe('INITIATED');
   });
 
   it('creates a new transaction row per retry rather than reusing the failed one (Req 4)', async () => {
