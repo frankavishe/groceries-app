@@ -10,6 +10,7 @@ import { In, LessThan, Repository } from 'typeorm';
 import { ApiException } from '../common/exceptions/api-exception';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Product } from '../products/entities/product.entity';
+import { OrdersGateway } from '../realtime/orders.gateway';
 import { UserRole } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { AssignOrderDto } from './dto/assign-order.dto';
@@ -51,6 +52,7 @@ export class OrdersService {
     @InjectRepository(OrderItem)
     private readonly orderItemsRepository: Repository<OrderItem>,
     private readonly usersService: UsersService,
+    private readonly ordersGateway: OrdersGateway,
   ) {}
 
   // Req 1-4: single transaction, rows locked in ascending product_id order
@@ -203,37 +205,48 @@ export class OrdersService {
   // Restores each item's stock under the same locking pattern as create(),
   // then marks the order CANCELLED.
   async releaseReservedStock(orderId: string): Promise<void> {
-    await this.ordersRepository.manager.transaction(async (manager) => {
-      const order = await manager.findOne(Order, { where: { id: orderId } });
-      if (!order) {
-        return;
-      }
-
-      const items = await manager.find(OrderItem, {
-        where: { orderId },
-      });
-      const productIds = [...new Set(items.map((i) => i.productId))].sort();
-
-      if (productIds.length > 0) {
-        const products = await manager
-          .createQueryBuilder(Product, 'product')
-          .setLock('pessimistic_write')
-          .where('product.id IN (:...ids)', { ids: productIds })
-          .orderBy('product.id', 'ASC')
-          .getMany();
-        const productMap = new Map(products.map((p) => [p.id, p]));
-        for (const item of items) {
-          const product = productMap.get(item.productId);
-          if (product) {
-            product.stockQuantity += item.quantity;
-          }
+    // Tracks whether this call actually cancelled an order, so the
+    // broadcast (realtime Req 1) fires once per real transition — not on the
+    // no-op path where orderId doesn't exist — and only after the
+    // transaction has committed.
+    const cancelled = await this.ordersRepository.manager.transaction(
+      async (manager) => {
+        const order = await manager.findOne(Order, { where: { id: orderId } });
+        if (!order) {
+          return false;
         }
-        await manager.save(Product, products);
-      }
 
-      order.status = OrderStatus.CANCELLED;
-      await manager.save(Order, order);
-    });
+        const items = await manager.find(OrderItem, {
+          where: { orderId },
+        });
+        const productIds = [...new Set(items.map((i) => i.productId))].sort();
+
+        if (productIds.length > 0) {
+          const products = await manager
+            .createQueryBuilder(Product, 'product')
+            .setLock('pessimistic_write')
+            .where('product.id IN (:...ids)', { ids: productIds })
+            .orderBy('product.id', 'ASC')
+            .getMany();
+          const productMap = new Map(products.map((p) => [p.id, p]));
+          for (const item of items) {
+            const product = productMap.get(item.productId);
+            if (product) {
+              product.stockQuantity += item.quantity;
+            }
+          }
+          await manager.save(Product, products);
+        }
+
+        order.status = OrderStatus.CANCELLED;
+        await manager.save(Order, order);
+        return true;
+      },
+    );
+
+    if (cancelled) {
+      this.ordersGateway.emitOrderStatusChanged(orderId, OrderStatus.CANCELLED);
+    }
   }
 
   // specs/delivery/requirements.md Req 1-3: admin assigns a DELIVERY_AGENT to
@@ -341,10 +354,13 @@ export class OrdersService {
       newStatus === OrderStatus.CANCELLED &&
       cancellationRestoresStock(order.status)
     ) {
-      await this.releaseReservedStock(id);
+      await this.releaseReservedStock(id); // emits internally, see there
     } else {
       order.status = newStatus;
       await this.ordersRepository.save(order);
+      // Realtime Req 1: covers both direct admin/agent transitions and
+      // payments.service.ts's PAID cascade, which calls this same method.
+      this.ordersGateway.emitOrderStatusChanged(id, newStatus);
     }
 
     return this.findOrderWithItemsOrFail(id);

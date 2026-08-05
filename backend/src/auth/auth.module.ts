@@ -25,5 +25,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
   controllers: [AuthController],
   providers: [AuthService, OtpService, otpSenderProvider, JwtStrategy],
+  // JwtModule is re-exported so RealtimeModule's gateway (see
+  // specs/realtime/design.md) can verify handshake tokens with the exact
+  // same secret/config as REST auth, without a second JwtModule.registerAsync
+  // living outside this file.
+  exports: [JwtModule],
 })
 export class AuthModule {}
