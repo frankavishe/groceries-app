@@ -11,6 +11,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -37,6 +38,11 @@ export class PaymentsController {
   // Req 5: a webhook from the MNO, not a logged-in user — no JwtAuthGuard.
   // Trust comes from adapter.verifyCallback's signature check inside the
   // service, not from our own auth layer.
+  // specs/hardening/design.md's Rate Limiting section: more generous than
+  // auth.controller.ts's override since legitimate MNO retries (idempotent,
+  // see constitution invariant 2) must not be starved, but it's still
+  // public and unauthenticated so it needs a ceiling.
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('callback/:provider')
   @HttpCode(HttpStatus.OK)
   handleCallback(@Param('provider') provider: string, @Req() req: Request) {

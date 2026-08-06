@@ -21,3 +21,14 @@ infra/.env
 # markdown docs — keep only README.md files tracked (PDF spec stays tracked too)
 *.md
 !README.md
+
+# Terraform (infra/aws) — .tf definitions and .terraform.lock.hcl are
+# tracked (the lock file pins provider versions, per HashiCorp's own
+# guidance); the provider binary cache, state, and real-value vars are not.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+crash.log
+crash.*.log

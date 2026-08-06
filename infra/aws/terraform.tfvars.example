@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (gitignored — real values, not committed) and fill in.
+
+aws_region  = "eu-west-1"
+environment = "staging"
+
+container_image     = "123456789012.dkr.ecr.eu-west-1.amazonaws.com/groceries-app-staging-backend:REPLACE_ME"
+acm_certificate_arn = "arn:aws:acm:eu-west-1:123456789012:certificate/REPLACE_ME"
+admin_web_origin    = "https://admin.example.com"
