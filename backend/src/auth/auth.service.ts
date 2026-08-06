@@ -11,10 +11,18 @@ import { RegisterDto } from './dto/register.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { OtpService } from './otp/otp.service';
 
+// specs/hardening/design.md's JWT TTL section: raised from 10 during the
+// M11 security pass — cheap to raise before any real password exists in the
+// production DB, unlike lowering it later.
+const BCRYPT_COST_FACTOR = 12;
+
 // Fixed bcrypt hash of a non-secret placeholder, compared against on login
 // when no user is found — keeps response timing independent of whether the
 // phone number exists, so login can't be used to enumerate registered users.
-const DUMMY_PASSWORD_HASH = bcrypt.hashSync('timing-safety-placeholder', 10);
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+  'timing-safety-placeholder',
+  BCRYPT_COST_FACTOR,
+);
 
 @Injectable()
 export class AuthService {
@@ -36,7 +44,7 @@ export class AuthService {
       );
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_COST_FACTOR);
     const user = this.usersRepository.create({
       fullName: dto.full_name,
       phoneNumber: dto.phone_number,

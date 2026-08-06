@@ -18,7 +18,9 @@ export const envValidationSchema = Joi.object({
   REDIS_HOST: Joi.string().required(),
   REDIS_PORT: Joi.number().default(6379),
 
-  JWT_SECRET: Joi.string().required(),
+  // min(32): specs/hardening/design.md's security pass — a short/guessable
+  // HS256 signing secret would undercut every other auth control in the app.
+  JWT_SECRET: Joi.string().min(32).required(),
   // Seconds. Default 86400 = 24h (see ISSUE-009 — confirm before Phase 11 hardening).
   JWT_ACCESS_TOKEN_TTL: Joi.number().default(86400),
 

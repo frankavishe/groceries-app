@@ -1,9 +1,14 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 
+// specs/hardening/design.md's Rate Limiting section: stricter than the
+// app-wide 'default' throttler (app.module.ts) — guards request volume per
+// IP, separate from otp.service.ts's per-phone-number wrong-code attempt cap.
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
