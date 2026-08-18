@@ -7,6 +7,7 @@ Three-app monorepo for a Tanzanian grocery delivery platform. See `PLAN.md` for 
 ```
 /backend        NestJS API Gateway (TypeScript, TypeORM, PostgreSQL, Redis)
 /admin-web      Next.js admin dashboard
+/customer-web   Next.js customer storefront
 /mobile-app     Flutter Android app
 /specs          Spec-driven-development artifacts (requirements/design/tasks per module)
 /docs           Generated API contract / OpenAPI, ERD, ADRs
@@ -28,7 +29,10 @@ npm run start:dev        # http://localhost:4000
 # 3. Admin dashboard (Next.js)
 cd admin-web && npm install && npm run dev        # http://localhost:3000 (or pass -p if occupied)
 
-# 4. Mobile app (Flutter, Android)
+# 4. Customer storefront (Next.js)
+cd customer-web && npm install && npm run dev -- -p 3001   # http://localhost:3001
+
+# 5. Mobile app (Flutter, Android)
 cd mobile-app && flutter pub get && flutter run
 ```
 
